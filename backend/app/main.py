@@ -6,11 +6,15 @@ from fastapi import Depends, HTTPException
 from sqlalchemy.orm import Session
 
 from app.api.decisions import router as decisions_router
+from app.api.catalog import router as catalog_router
+from app.api.ledger import router as ledger_router
 from app.db.session import get_db
 
 app = FastAPI(title="Aegis Trace API")
 app.add_middleware(CORSMiddleware, allow_origins=["http://localhost:5173"], allow_methods=["GET", "POST"], allow_headers=["Content-Type", "Authorization"])
 app.include_router(decisions_router)
+app.include_router(catalog_router)
+app.include_router(ledger_router)
 
 
 @app.get("/health")

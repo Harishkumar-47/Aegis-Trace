@@ -1,7 +1,7 @@
 import uuid
 from datetime import datetime, timezone
-from sqlalchemy import Column, String, DateTime, ForeignKey, Text
-from sqlalchemy.dialects.postgresql import UUID
+from sqlalchemy import Column, String, DateTime, ForeignKey, Text, Integer
+from sqlalchemy.dialects.postgresql import UUID, JSONB
 from sqlalchemy.orm import relationship
 
 from app.db.session import Base
@@ -16,6 +16,11 @@ class Decision(Base):
     model_id = Column(UUID(as_uuid=True), ForeignKey("ai_models.id"), nullable=False)
 
     category = Column(String, nullable=False)
+    title = Column(String(200), nullable=True)
+    diff_content = Column(Text, nullable=True)
+    affected_files = Column(JSONB, nullable=False, default=list)
+    status = Column(String(32), nullable=False, default="captured")
+    hash_version = Column(Integer, nullable=False, default=3)
     prompt_hash = Column(String, nullable=False)
     recommendation_text = Column(Text, nullable=False)
     diff_ref = Column(String, nullable=True)

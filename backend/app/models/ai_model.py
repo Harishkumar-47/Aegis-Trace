@@ -1,5 +1,6 @@
 import uuid
-from sqlalchemy import Column, String
+from datetime import datetime, timezone
+from sqlalchemy import Column, String, DateTime
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import relationship
 
@@ -13,5 +14,6 @@ class AIModel(Base):
     provider = Column(String, nullable=False)
     model_name = Column(String, nullable=False)
     version = Column(String, nullable=True)
+    created_at = Column(DateTime(timezone=True), nullable=False, default=lambda: datetime.now(timezone.utc))
 
     decisions = relationship("Decision", back_populates="model")
