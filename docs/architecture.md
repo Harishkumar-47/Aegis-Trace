@@ -26,13 +26,13 @@ docs/                  design and contracts
 docker-compose.yml     local stack
 ```
 
-Phase 1 uses `frontend -> backend -> PostgreSQL`. The API checks PostgreSQL through `GET /api/status`. Later phases add a replay worker that applies a submitted unified diff only inside a restricted Docker container, runs Semgrep and Trivy, persists scanner evidence, and computes a score from that evidence. Checkpoints append later evidence and a new score. A policy compares the latest score with allow and block thresholds. The UI reads all results from the API.
+Phase 1 uses `frontend -> backend -> PostgreSQL`. The API checks PostgreSQL through `GET /api/status`. Phase 2 captures decisions, stores a versioned hash chain, and serves list/detail views. Later phases add a replay worker that applies a submitted unified diff only inside a restricted Docker container, runs Semgrep and Trivy, persists scanner evidence, and computes a score from that evidence. Checkpoints append later evidence and a new score. A policy compares the latest score with allow and block thresholds. The UI reads all results from the API.
 
 The backend must never execute a submitted diff on the host. Replay requires container isolation, no privileged mode, a non-root user, CPU and memory limits, disabled network by default, a timeout, and cleanup. The Docker daemon is powerful; its access must be limited to the replay service in a later phase.
 
 ## PostgreSQL schema
 
-All primary keys are UUIDs. Existing migration `9d4e60fb7c76` creates `users`, `ai_models`, and `decisions`. The next decision migration must store the submitted prompt and diff content or immutable artifact references, affected files, and organization ownership. `decisions` carries `prev_hash` and `row_hash`; verification must recompute the chain. Hashes detect changes but cannot prevent a database administrator from rewriting the whole chain, so external checkpoints are needed for stronger assurance.
+All primary keys are UUIDs. Migration `9d4e60fb7c76` creates `users`, `ai_models`, and `decisions`; migration `2a01_decision_capture` adds exact diff content, affected files, title, status, and hash version without deleting existing Decisions. Prompt text is represented by `prompt_hash` for now. `decisions` carries `prev_hash` and `row_hash`; verification recomputes the chain. Hashes detect changes but cannot prevent a database administrator from rewriting the whole chain, so external checkpoints are needed for stronger assurance.
 
 | Table | Key fields | Purpose |
 | --- | --- | --- |
@@ -53,7 +53,7 @@ Foreign keys connect decisions to user/model/org; replay, score, checkpoint, lin
 
 ## API contracts
 
-Current Phase 1 endpoint: `GET /api/status -> {"api":"ready","database":"connected","phase":1}`. `GET /health` only confirms the API process. Existing decision creation and detail routes are partial; they require existing user/model IDs and do not yet capture a real diff.
+Current endpoints: `GET /api/status -> {"api":"ready","database":"connected","phase":1}`, `GET /api/catalog`, `POST /api/decisions`, `GET /api/decisions`, `GET /api/decisions/{id}`, and `GET /api/ledger/verify`. `GET /health` only confirms the API process. Decision capture requires a catalog user/model ID and a real diff; the migration adds local demo records.
 
 | Later endpoint | Request | Response |
 | --- | --- | --- |

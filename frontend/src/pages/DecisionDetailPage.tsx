@@ -1,0 +1,17 @@
+import { useEffect, useState } from 'react'
+import { api } from '../services/api'
+import type { Decision } from '../types/decision'
+import { CategoryBadge } from '../components/CategoryBadge'
+import { DecisionBadge } from '../components/DecisionBadge'
+
+export function DecisionDetailPage({ id, navigate }: { id: string; navigate: (path: string) => void }) {
+  const [decision, setDecision] = useState<Decision | null>(null)
+  const [ledger, setLedger] = useState<{ valid: boolean; checked: number; broken_at: string | null } | null>(null)
+  const [error, setError] = useState('')
+  useEffect(() => { Promise.all([api.decision(id), api.ledger()]).then(([d, l]) => { setDecision(d); setLedger(l) }).catch(e => setError(e.message)) }, [id])
+  return <section><button className="text-sm text-cyan-400" onClick={() => navigate('/decisions')}>← Decisions</button>{error && <p role="alert" className="mt-6 text-rose-400">{error}</p>}{!decision && !error && <p className="mt-6 text-slate-400">Loading decision…</p>}{decision && <><div className="mt-5 flex flex-wrap items-start justify-between gap-4"><div><p className="text-sm uppercase tracking-widest text-cyan-400">Security decision</p><h1 className="mt-2 text-3xl font-semibold">{decision.title || 'Untitled decision'}</h1><div className="mt-4 flex gap-3"><CategoryBadge category={decision.category}/><DecisionBadge status={decision.status}/></div></div><div className="rounded-xl border border-slate-700 bg-slate-900 p-5 text-center"><p className="text-xs uppercase text-slate-400">Evidence-Based Trust Score</p><p className="mt-2 text-xl font-semibold">Not Tested</p></div></div>
+    {new URLSearchParams(location.search).has('captured') && <p className="mt-6 rounded-lg border border-emerald-700 bg-emerald-950 p-4 text-emerald-300">Decision captured. Ledger hash created.</p>}
+    <div className="mt-8 grid gap-5 md:grid-cols-2"><div className="rounded-xl border border-slate-700 bg-slate-900 p-6"><h2 className="text-lg font-semibold">Decision Details</h2><dl className="mt-4 space-y-3 text-sm"><div><dt className="text-slate-400">AI Model</dt><dd>{decision.model_name || decision.model_id}</dd></div><div><dt className="text-slate-400">Created</dt><dd>{new Date(decision.created_at).toLocaleString()}</dd></div><div><dt className="text-slate-400">Affected Files</dt><dd>{decision.affected_files.length ? decision.affected_files.join(', ') : 'Not recorded'}</dd></div></dl></div><div className="rounded-xl border border-slate-700 bg-slate-900 p-6"><h2 className="text-lg font-semibold">Decision Ledger</h2><p className={`mt-3 ${ledger?.valid ? 'text-emerald-400' : 'text-rose-400'}`}>{ledger ? ledger.valid ? `${ledger.checked} records verified` : `Integrity failure at ${ledger.broken_at}` : 'Checking…'}</p><p className="mt-4 text-xs text-slate-400">Row hash</p><code className="break-all text-xs text-cyan-300">{decision.row_hash}</code></div></div>
+    <div className="mt-5 rounded-xl border border-slate-700 bg-slate-900 p-6"><h2 className="text-lg font-semibold">AI Recommendation</h2><p className="mt-4 whitespace-pre-wrap text-slate-300">{decision.recommendation_text}</p></div><div className="mt-5 rounded-xl border border-slate-700 bg-slate-900 p-6"><h2 className="text-lg font-semibold">Proposed Diff</h2><pre className="mt-4 overflow-x-auto whitespace-pre-wrap text-sm text-slate-300">{decision.diff_content || 'No diff stored for this legacy decision.'}</pre></div>
+  </>}</section>
+}

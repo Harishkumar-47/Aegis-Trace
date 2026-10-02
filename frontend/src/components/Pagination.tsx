@@ -1,0 +1,3 @@
+export function Pagination({ page, pageSize, total, onChange }: { page: number; pageSize: number; total: number; onChange: (page: number) => void }) {
+  return <div className="mt-6 flex items-center justify-between text-sm text-slate-400"><span>{total} decisions</span><div className="flex items-center gap-3"><button className="rounded border border-slate-700 px-3 py-1 disabled:opacity-40" disabled={page <= 1} onClick={() => onChange(page - 1)}>Previous</button><span>Page {page}</span><button className="rounded border border-slate-700 px-3 py-1 disabled:opacity-40" disabled={page * pageSize >= total} onClick={() => onChange(page + 1)}>Next</button></div></div>
+}
